@@ -14,7 +14,7 @@ from .harness.scaffold import scaffold_mcp_config as _scaffold_mcp_config
 
 app = typer.Typer(help="Audit and scaffold AI harness configs.")
 
-CTA = "\n→ Book a free 30-min review: agentstack.fyi/audit\n"
+CTA = "\n→ Book a free 30-min review: fusional.dev/agentstack\n"
 
 _MEMORY_SETUP = """\
 # Memory Setup

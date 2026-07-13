@@ -8,4 +8,4 @@ agentstack-init audit
 agentstack-init init
 ```
 
-→ Book a free 30-min review: agentstack.fyi/audit
+→ Book a free 30-min review: fusional.dev/agentstack
