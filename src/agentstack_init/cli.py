@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -113,17 +114,61 @@ def audit(
 
 
 @app.command(name="update-check")
-def update_check():
-    """Check for harness version drift against last known-good configs."""
-    harnesses = _detect_harness(Path("."))
+def update_check(
+    project_dir: str = typer.Option(".", help="Project root directory"),
+    set_baseline: bool = typer.Option(
+        False, "--set-baseline", help="Record current versions as the known-good baseline"
+    ),
+):
+    """Check harness version drift against the known-good baseline in .fusional/known-good.json."""
+    cwd = Path(project_dir).resolve()
+    harnesses = _detect_harness(cwd)
 
     if not harnesses:
         typer.echo("No harnesses detected.")
         raise typer.Exit(0)
 
     for h in harnesses:
-        typer.echo(f"✓  {h.name}: config_root={h.config_root}")
+        typer.echo(f"✓  {h.name}: version={h.version or 'unknown'} config_root={h.config_root}")
         for issue in h.known_issues:
             typer.echo(f"   ⚠  {issue}")
 
-    typer.echo("\nAll detected harnesses checked.")
+    current = {h.name: h.version for h in harnesses}
+    baseline_path = cwd / ".fusional" / "known-good.json"
+    baseline = None
+    if baseline_path.exists():
+        try:
+            baseline = json.loads(baseline_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            baseline = None
+
+    if baseline is None or set_baseline:
+        out = _ensure_fusional(cwd)
+        payload = {
+            "harnesses": current,
+            "recorded": datetime.now().isoformat(timespec="seconds"),
+        }
+        (out / "known-good.json").write_text(json.dumps(payload, indent=2))
+        if baseline is None:
+            typer.echo(f"\nNo baseline found — recorded current versions as known-good: {baseline_path}")
+        else:
+            typer.echo(f"\nBaseline updated: {baseline_path}")
+        return
+
+    known = baseline.get("harnesses") or {}
+    drifted = False
+    for name, version in current.items():
+        if name not in known:
+            typer.echo(f"⚠  {name}: not in baseline — run with --set-baseline to record it")
+            drifted = True
+        elif known[name] != version:
+            typer.echo(
+                f"⚠  {name}: version drift — now {version or 'unknown'}, "
+                f"known-good {known[name] or 'unknown'}"
+            )
+            drifted = True
+
+    if drifted:
+        typer.echo("\nRun `agentstack-init audit`, then `update-check --set-baseline` to accept the new versions.")
+    else:
+        typer.echo(f"\nNo drift — versions match baseline recorded {baseline.get('recorded', 'earlier')}.")
