@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -15,6 +17,23 @@ class HarnessInfo:
     known_issues: list[str] = field(default_factory=list)
 
 
+_VERSION_RE = re.compile(r"v?(\d+\.\d+(?:\.\d+)?)")
+
+
+def _cli_version(binary: str) -> Optional[str]:
+    """Ask the harness CLI for its version; None when the binary is absent or odd."""
+    try:
+        proc = subprocess.run(
+            [binary, "--version"], capture_output=True, text=True, timeout=5
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode != 0:
+        return None
+    match = _VERSION_RE.search(proc.stdout or "")
+    return match.group(1) if match else None
+
+
 def detect_harness(project_dir: Path) -> list[HarnessInfo]:
     results: list[HarnessInfo] = []
     home = Path.home()
@@ -23,7 +42,7 @@ def detect_harness(project_dir: Path) -> list[HarnessInfo]:
     if claude_dir.exists():
         results.append(HarnessInfo(
             name="claude_code",
-            version=None,
+            version=_cli_version("claude"),
             config_root=claude_dir,
             known_issues=[],
         ))
@@ -34,10 +53,14 @@ def detect_harness(project_dir: Path) -> list[HarnessInfo]:
             raw = yaml.safe_load(hermes_config.read_text()) or {}
         except yaml.YAMLError:
             raw = {}
-        version = raw.get("version")
+        # Real Hermes configs carry no version key; the CLI is authoritative.
+        # A legacy explicit `version:` key remains the fallback.
+        version = _cli_version("hermes")
+        if version is None and raw.get("version") is not None:
+            version = str(raw.get("version"))
         results.append(HarnessInfo(
             name="hermes",
-            version=str(version) if version is not None else None,
+            version=version,
             config_root=hermes_config.parent,
             known_issues=[],
         ))
