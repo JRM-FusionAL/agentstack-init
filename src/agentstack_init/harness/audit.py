@@ -52,18 +52,45 @@ def _audit_claude_code(config_dir: Path, project_dir: Path) -> list[AuditIssue]:
             fix="Run: agentstack-init init --harness claude_code",
         ))
 
-    mcp_config = config_dir / "claude_mcp_settings.json"
-    if not mcp_config.exists():
+    servers = _collect_claude_code_servers(config_dir, project_dir)
+    if not servers:
         issues.append(AuditIssue(
             severity="error",
             code="MISSING_MCP_CONFIG",
-            message="No MCP config at ~/.claude/claude_mcp_settings.json",
+            message="No MCP servers configured (checked .mcp.json and ~/.claude.json)",
             fix="Run: agentstack-init init --harness claude_code",
         ))
     else:
-        issues.extend(_check_mcp_servers(mcp_config))
+        issues.extend(_check_mcp_servers(servers))
 
     return issues
+
+
+def _collect_claude_code_servers(config_dir: Path, project_dir: Path) -> dict:
+    """Gather MCP servers from the locations Claude Code actually reads:
+    <project>/.mcp.json (project scope), then ~/.claude.json top-level
+    mcpServers and its per-project projects[<abs path>].mcpServers entry."""
+    servers: dict = {}
+
+    servers.update(_read_mcp_servers_json(project_dir / ".mcp.json"))
+
+    claude_json = config_dir.parent / ".claude.json"
+    try:
+        user_config = json.loads(claude_json.read_text())
+    except (json.JSONDecodeError, OSError):
+        return servers
+
+    servers.update(user_config.get("mcpServers") or {})
+    project_entry = (user_config.get("projects") or {}).get(str(project_dir.resolve())) or {}
+    servers.update(project_entry.get("mcpServers") or {})
+    return servers
+
+
+def _read_mcp_servers_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text()).get("mcpServers") or {}
+    except (json.JSONDecodeError, OSError):
+        return {}
 
 
 def _audit_hermes(config_dir: Path) -> list[AuditIssue]:
@@ -81,26 +108,24 @@ def _audit_hermes(config_dir: Path) -> list[AuditIssue]:
         ))
         return issues
 
-    servers = (raw.get("mcp") or {}).get("servers") or []
+    # Hermes >= 0.15 stores servers as a top-level `mcp_servers` mapping;
+    # older configs used a `mcp.servers` list. Accept either.
+    servers = raw.get("mcp_servers") or (raw.get("mcp") or {}).get("servers") or {}
     if not servers:
         issues.append(AuditIssue(
             severity="error",
             code="MISSING_MCP_CONFIG",
-            message="No MCP servers configured in ~/.hermes/config.yaml",
+            message="No MCP servers configured in ~/.hermes/config.yaml (mcp_servers)",
             fix="Run: agentstack-init init --harness hermes",
         ))
 
     return issues
 
 
-def _check_mcp_servers(mcp_config_path: Path) -> list[AuditIssue]:
+def _check_mcp_servers(servers: dict) -> list[AuditIssue]:
     issues: list[AuditIssue] = []
-    try:
-        config = json.loads(mcp_config_path.read_text())
-    except (json.JSONDecodeError, OSError):
-        return issues
 
-    for name, server in (config.get("mcpServers") or {}).items():
+    for name, server in servers.items():
         url = server.get("url")
         if url and url.startswith("http"):
             try:
