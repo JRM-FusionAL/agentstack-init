@@ -51,7 +51,7 @@ def test_audit_creates_report_json(fake_claude_dir, tmp_path):
 def test_audit_prints_cta(fake_claude_dir, tmp_path):
     result = runner.invoke(app, ["audit", "--harness", "claude_code", "--project-dir", str(tmp_path)],
                            catch_exceptions=False)
-    assert "agentstack.fyi/audit" in result.output
+    assert "fusional.dev/agentstack" in result.output
 
 
 def test_audit_prints_issue_symbols(fake_claude_dir, tmp_path):
