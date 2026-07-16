@@ -45,6 +45,9 @@ agentstack-init = "agentstack_init.cli:app"
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentstack_init"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "pyproject.toml", ".env.example"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
