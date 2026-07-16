@@ -96,7 +96,7 @@ def test_flags_missing_mcp_config_hermes(fake_hermes_dir, tmp_path):
 
 def test_hermes_no_issue_when_servers_present_legacy_schema(fake_hermes_dir, tmp_path):
     (fake_hermes_dir / "config.yaml").write_text(
-        "version: 0.15\nmcp:\n  servers:\n    - name: recall\n      url: http://localhost:8107/mcp\n"
+        "version: 0.15\nmcp:\n  servers:\n    - name: recall\n      url: http://localhost:9107/mcp\n"
     )
     report = audit_harness(fake_hermes_dir, "hermes", tmp_path)
     codes = {i.code for i in report.issues}
@@ -109,7 +109,7 @@ def test_hermes_no_issue_with_real_mcp_servers_schema(fake_hermes_dir, tmp_path)
         "version: 0.15\n"
         "mcp_servers:\n"
         "  fusional-recall:\n"
-        "    url: http://localhost:8107/mcp\n"
+        "    url: http://localhost:9107/mcp\n"
         "  linear:\n"
         "    command: npx\n"
     )

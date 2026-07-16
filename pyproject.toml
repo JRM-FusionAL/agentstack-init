@@ -5,11 +5,18 @@ build-backend = "hatchling.build"
 [project]
 name = "agentstack-init"
 version = "0.1.0"
-description = "Audit and scaffold AI harness configs (Claude Code, Hermes) — lead magnet for agentstack consulting"
+description = "Audit and scaffold AI harness configs for Claude Code and Hermes Agent — score your setup out of 100"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Jonathan Melton" }]
 requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
     "mcp[cli]>=1.1.0",
     "typer>=0.12.0",
@@ -27,6 +34,10 @@ dev = [
     "pytest-cov>=5.0.0",
     "ruff>=0.4.0",
 ]
+
+[project.urls]
+Homepage = "https://fusional.dev/agentstack"
+Repository = "https://github.com/JRM-FusionAL/agentstack-init"
 
 [project.scripts]
 agentstack-init = "agentstack_init.cli:app"
