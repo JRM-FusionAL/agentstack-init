@@ -9,7 +9,7 @@ _CLAUDE_MD_TEMPLATE = """\
 
 ## Memory
 
-This project uses agentstack memory (FusionAL-Recall at :8107).
+This project uses agentstack memory (a recall MCP server, if configured).
 - Before debugging: `recall <symptom>`
 - After fixing: `remember <what-you-learned>`
 
