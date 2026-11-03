@@ -16,7 +16,7 @@ load_dotenv()
 HOST = os.getenv("AGENTSTACK_HOST", "0.0.0.0")
 PORT = int(os.getenv("AGENTSTACK_PORT", "8200"))
 
-mcp = FastMCP("agentstack-init")
+mcp = FastMCP("agentstack-init", host=HOST, port=PORT)
 
 
 @mcp.tool()
@@ -56,7 +56,7 @@ def scaffold_mcp_config(harness_name: str) -> str:
 
 
 def main() -> None:
-    mcp.run(transport="sse", host=HOST, port=PORT)
+    mcp.run(transport="sse")
 
 
 if __name__ == "__main__":

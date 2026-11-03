@@ -109,11 +109,7 @@ def test_hermes_no_issue_with_real_mcp_servers_schema(fake_hermes_dir, tmp_path)
         "version: 0.15\n"
         "mcp_servers:\n"
         "  fusional-recall:\n"
-<<<<<<< HEAD
         "    url: http://localhost:9107/mcp\n"
-=======
-        "    url: http://localhost:9107/mcp\n"
->>>>>>> 83b642dcd79abb853d2782e293bc878d5222673e
         "  linear:\n"
         "    command: npx\n"
     )
